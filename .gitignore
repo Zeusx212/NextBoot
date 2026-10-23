@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+*.exe
+*.spec
+python_path.cfg
