@@ -17,6 +17,7 @@ from ui.theme import Theme
 from ui.os_card import OSCard
 from ui.modal_reboot import RebootModal
 from ui.modal_bios_settings import BIOSSettingsModal
+from ui.modal_bios_updater import BIOSUpdaterModal
 from ui.log_window import LogWindow
 
 class AppWindow(tk.Tk):
@@ -199,6 +200,23 @@ class AppWindow(tk.Tk):
             command=self._on_open_bios_settings
         )
         btn_bios_settings.pack(side="left", padx=(0, 6))
+
+        # Universal BIOS Update Assistant Button
+        btn_bios_updater = tk.Button(
+            toolbar,
+            text="⚡ BIOS Update Assistant",
+            font=Theme.FONT_BTN_SM,
+            bg=Theme.BTN_SUCCESS_BG,
+            fg=Theme.BTN_SUCCESS_FG,
+            activebackground=Theme.BTN_SUCCESS_HOVER,
+            activeforeground=Theme.BTN_SUCCESS_FG,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._on_open_bios_updater
+        )
+        btn_bios_updater.pack(side="left", padx=(0, 6))
 
         # Reboot to BIOS Button
         btn_bios = tk.Button(
@@ -460,6 +478,10 @@ class AppWindow(tk.Tk):
             bios_manager=self.bios_manager,
             on_order_saved_callback=self.refresh_entries
         )
+
+    def _on_open_bios_updater(self):
+        """Opens Universal BIOS Update Assistant."""
+        BIOSUpdaterModal(self)
 
     def _on_reboot_to_bios(self):
         """Reboots system into motherboard UEFI BIOS setup."""

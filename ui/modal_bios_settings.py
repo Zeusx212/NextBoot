@@ -395,7 +395,7 @@ class BIOSSettingsModal(tk.Toplevel):
         # Direct Reboot to BIOS setup
         btn_reboot_bios = tk.Button(
             bottom,
-            text="⚙️ Reboot to BIOS Setup Screen",
+            text="⚙️ Reboot to BIOS Setup",
             font=Theme.FONT_BTN,
             bg=Theme.BADGE_HW_BG,
             fg=Theme.TEXT_PRIMARY,
@@ -405,7 +405,22 @@ class BIOSSettingsModal(tk.Toplevel):
             cursor="hand2",
             command=self._on_reboot_bios
         )
-        btn_reboot_bios.pack(side="left")
+        btn_reboot_bios.pack(side="left", padx=(0, 8))
+
+        # Launch BIOS Update Assistant
+        btn_updater = tk.Button(
+            bottom,
+            text="⚡ BIOS Update Assistant",
+            font=Theme.FONT_BTN,
+            bg=Theme.BTN_SUCCESS_BG,
+            fg=Theme.BTN_SUCCESS_FG,
+            bd=0,
+            padx=14,
+            pady=8,
+            cursor="hand2",
+            command=self._on_open_bios_updater
+        )
+        btn_updater.pack(side="left")
 
         btn_close = tk.Button(
             bottom,
@@ -510,3 +525,8 @@ class BIOSSettingsModal(tk.Toplevel):
         if confirm:
             import subprocess
             subprocess.run(["shutdown", "/r", "/fw", "/t", "0", "/f"])
+
+    def _on_open_bios_updater(self):
+        """Launches Universal BIOS Update Assistant modal."""
+        from ui.modal_bios_updater import BIOSUpdaterModal
+        BIOSUpdaterModal(self)

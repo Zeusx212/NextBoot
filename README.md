@@ -28,6 +28,12 @@
   - **Boot Menu Timeout**: Configure the bootloader countdown timer (0 to 60 seconds).
   - **Windows Fast Startup Toggle**: 1-click toggle to disable hybrid hibernation, preventing NTFS drive lockouts in Linux.
   - **Hardware RTC Clock Sync (UTC)**: 1-click toggle (`RealTimeIsUniversal=1`) to eliminate the clock jumping back/forth between Linux and Windows.
+- **⚡ Universal BIOS Update Assistant & Flashback Staging**:
+  - **Multi-Brand Motherboard Support**: Detects and tailors flashing workflows for **Gigabyte / AORUS** (Q-Flash / Q-Flash Plus), **ASUS / ROG / TUF** (EZ Flash 3 / USB Flashback), **MSI** (M-Flash / Flash BIOS Button), **ASRock** (Instant Flash), **Dell / Alienware**, **HP / Omen**, and **Lenovo / ThinkPad**.
+  - **Deep Binary Inspection & Integrity**: Analyzes firmware files (`.bin`, `.rom`, `.cap`, `.Fxx`), validates standard SPI flash sizes (8MB, 16MB, 32MB, 64MB, or +2048-byte ASUS capsule header), and computes SHA-256 digests.
+  - **Motherboard Model Verification**: Scans binary headers for embedded model tokens (e.g. `B550M DS3H`) to prevent flashing the wrong firmware version.
+  - **Automated Flashback USB Staging**: Automatically identifies FAT32 USB drives and formats standard recovery filenames (e.g. `GIGABYTE.bin`, `MSI.ROM`, `[MODEL].CAP`) with post-copy SHA-256 verification.
+  - **1-Click Flasher Reboot**: Reboots straight into your motherboard's native firmware flashing environment (`shutdown /r /fw`) with zero key-spamming.
 - **⚡ Built-In Firmware Utilities**:
   - **Reboot to BIOS / UEFI Setup**: 1-click reboot directly into motherboard firmware setup without spamming F2/Del (`shutdown /r /fw`).
   - **Windows Recovery Menu**: 1-click reboot to advanced troubleshooting options (`shutdown /r /o`).
@@ -76,6 +82,15 @@ python main.py --list
 # View Motherboard, BIOS, Secure Boot, and Dual-Boot Diagnostics
 python main.py --firmware-info
 
+# View Universal BIOS flashing profile and vendor guidelines
+python main.py --bios-guide
+
+# Inspect and verify a BIOS firmware image binary file
+python main.py --analyze-bios "C:\Downloads\B550MDS3H.bin"
+
+# Stage firmware to a USB drive with automated Flashback naming
+python main.py --stage-bios "C:\Downloads\B550MDS3H.bin" --target-drive "E:\"
+
 # Boot directly into Ubuntu on next restart
 python main.py --boot "Ubuntu"
 
@@ -99,20 +114,26 @@ python main.py --clear
 ```
 d:\Antigravity\NextBoot\
 ├── core\
-│   ├── os_detector.py      # BCD & UEFI firmware NVRAM boot entry parser
-│   ├── boot_manager.py     # One-time boot sequence & restart dispatcher
-│   ├── esp_scanner.py      # EFI System Partition (ESP) scanner
-│   └── elevation.py        # Windows UAC elevation promoter
+│   ├── os_detector.py              # BCD & UEFI firmware NVRAM boot entry parser
+│   ├── boot_manager.py             # One-time boot sequence & restart dispatcher
+│   ├── bios_manager.py             # Motherboard diagnostics & dual-boot tweaks
+│   ├── universal_bios_updater.py   # Multi-vendor firmware analyzer & Flashback staging
+│   ├── esp_scanner.py              # EFI System Partition (ESP) scanner
+│   └── elevation.py                # Windows UAC elevation promoter
 ├── ui\
-│   ├── theme.py            # Windows 11 Fluent dark palette & typography
-│   ├── icons.py            # Resolution-independent vector brand graphics
-│   ├── os_card.py          # Interactive OS card component
-│   ├── modal_reboot.py     # Confirmation & countdown modal
-│   ├── app_window.py       # Main application window & toolbar
-│   └── log_window.py       # Live diagnostics and raw BCD tables
+│   ├── theme.py                    # Windows 11 Fluent dark palette & typography
+│   ├── icons.py                    # Resolution-independent vector brand graphics
+│   ├── os_card.py                  # Interactive OS card component
+│   ├── modal_reboot.py             # Confirmation & countdown modal
+│   ├── modal_bios_settings.py      # UEFI boot order & clock/power settings modal
+│   ├── modal_bios_updater.py       # Universal BIOS update assistant modal
+│   ├── app_window.py               # Main application window & toolbar
+│   └── log_window.py               # Live diagnostics and raw BCD tables
 ├── tests\
-│   ├── test_detector.py    # Parser unit tests
-│   └── test_comprehensive.py # Full suite unit tests
+│   ├── test_detector.py            # Parser unit tests
+│   ├── test_bios_manager.py        # BIOS manager unit tests
+│   ├── test_bios_updater.py        # Universal BIOS updater unit tests
+│   └── test_comprehensive.py       # Full suite unit tests
 ├── main.py                 # Application entry point (GUI + CLI)
 ├── NextBoot.bat            # Elevated launcher script
 ├── NextBoot.vbs            # Silent launcher (no console window)

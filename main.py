@@ -21,6 +21,7 @@ from core.elevation import is_admin, elevate_process
 from core.os_detector import OSDetector
 from core.boot_manager import BootManager
 from core.bios_manager import BIOSManager
+from core.universal_bios_updater import UniversalBIOSUpdater
 
 def set_high_dpi_aware():
     """Enables crisp High-DPI font rendering on modern Windows screens."""
@@ -50,6 +51,67 @@ def run_cli(args):
         print(f"RTC Clock    : {'UTC (RealTimeIsUniversal=1)' if info.get('rtc_utc') else 'Local Time'}")
         print(f"Boot Timeout : {info.get('timeout')} seconds\n")
         sys.exit(0)
+
+    # 0b. Universal BIOS Flash Profile & Guide
+    if args.bios_guide:
+        updater = UniversalBIOSUpdater(simulate=args.simulate)
+        prof = updater.get_vendor_profile()
+        hw = updater.detect_hardware()
+        print("\n=== NextBoot: Universal BIOS Update Profile ===")
+        print(f"Motherboard       : {hw.get('manufacturer')} {hw.get('product')}")
+        print(f"Installed BIOS    : {hw.get('bios_version')} ({hw.get('bios_date')})")
+        print(f"Vendor Protocol   : {prof.display_name}")
+        print(f"Flashing Utility  : {prof.flashing_utility}")
+        print(f"Flashback File    : {prof.flashback_filename or 'Standard Filename'}")
+        print(f"File System Req   : {prof.recommended_fs}")
+        print(f"Entry Shortcut    : {prof.shortcut_hint}")
+        print("\nStep-by-step Flashing Instructions:")
+        for idx, step in enumerate(prof.instructions, 1):
+            print(f"  {idx}. {step}")
+        print()
+        sys.exit(0)
+
+    # 0c. Analyze Firmware Image File
+    if args.analyze_bios:
+        updater = UniversalBIOSUpdater(simulate=args.simulate)
+        try:
+            info = updater.analyze_firmware_file(args.analyze_bios)
+            print(f"\n=== NextBoot: Firmware Image Analysis ===")
+            print(f"File Name         : {info.file_name}")
+            print(f"File Size         : {info.file_size_mb:.2f} MB ({info.file_size:,} bytes)")
+            print(f"SPI Flash Size    : {'Valid standard SPI capacity' if info.is_valid_spi_size else 'Non-standard capacity'}")
+            print(f"Recognized Format : {info.format_type}")
+            print(f"Capsule Header    : {'Present (2048-byte header)' if info.has_capsule_header else 'None / Raw'}")
+            print(f"SHA-256 Digest    : {info.sha256}")
+            print(f"Board Verified    : {'YES (Model string identified inside binary)' if info.matches_detected_board else 'UNCONFIRMED'}")
+            if info.matched_strings:
+                print(f"Matched Tokens    : {', '.join(info.matched_strings)}")
+            if info.recommended_staged_name:
+                print(f"Flashback Target  : {info.recommended_staged_name}")
+            if info.warnings:
+                print("\nWarnings:")
+                for w in info.warnings:
+                    print(f"  ⚠️ {w}")
+            print()
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error analyzing firmware image: {e}")
+            sys.exit(1)
+
+    # 0d. Stage Firmware File to Drive
+    if args.stage_bios:
+        if not args.target_drive:
+            print("Error: --target-drive (e.g. 'E:\\') is required when using --stage-bios.")
+            sys.exit(1)
+        updater = UniversalBIOSUpdater(simulate=args.simulate)
+        print(f"\nStaging firmware '{args.stage_bios}' to '{args.target_drive}'...")
+        success, msg, created = updater.stage_firmware(args.stage_bios, args.target_drive, create_flashback_copy=True)
+        if success:
+            print(f"Success!\n{msg}\n")
+            sys.exit(0)
+        else:
+            print(f"Failed: {msg}\n")
+            sys.exit(1)
 
     # 1. List detected OS entries
     if args.list:
@@ -148,13 +210,18 @@ def main():
     parser.add_argument("--no-reboot", action="store_true", help="Schedule one-time boot but do not restart immediately")
     parser.add_argument("--bios", action="store_true", help="Reboot directly into UEFI BIOS Setup")
     parser.add_argument("--clear", action="store_true", help="Clear any scheduled one-time boot sequence")
+    parser.add_argument("--bios-guide", action="store_true", help="Display vendor BIOS flashing instructions and Flashback target naming")
+    parser.add_argument("--analyze-bios", type=str, help="Analyze and verify a BIOS firmware image binary file")
+    parser.add_argument("--stage-bios", type=str, help="Stage a BIOS firmware image file to target drive")
+    parser.add_argument("--target-drive", type=str, help="Target drive letter/path for firmware staging (e.g. 'E:\\')")
     parser.add_argument("--simulate", action="store_true", help="Run in simulation / test mode without modifying BCD")
     parser.add_argument("--no-auto-elevate", action="store_true", help="Do not prompt for UAC elevation on launch")
 
     args = parser.parse_args()
 
     # If any CLI action was requested, run in CLI mode
-    if args.list or args.firmware_info or args.boot or args.boot_guid or args.bios or args.clear:
+    if (args.list or args.firmware_info or args.bios_guide or args.analyze_bios or
+        args.stage_bios or args.boot or args.boot_guid or args.bios or args.clear):
         run_cli(args)
         return
 
